@@ -9,16 +9,9 @@ def extract_question_with_answer(question_dir_name):
         question = None
         for line in question_file_context.split('\n\n'):
             line_title = line.split(':\n')[0]
-            line_text = line.split(':\n')[-1]
+            line_text = line.split(':\n')[-1].replace('\n', ' ')
             if 'вопрос' in line_title.lower():
                 question = line_text
             elif 'ответ' in line_title.lower():
                 questions_with_answers[question] = line_text
     return questions_with_answers
-
-
-if __name__ == '__main__':
-    question_dir_name = 'quiz-questions'
-
-    questions_with_answers = extract_question_with_answer(question_dir_name)
-    print(questions_with_answers)
