@@ -28,12 +28,24 @@ def start(update: Update, context: CallbackContext) -> None:
     )
 
 
-def new_question(update: Update, context: CallbackContext, questions_with_answers, redis_db) -> None:
-    random_question = random.choice(list(questions_with_answers.keys()))
+def reply_to_user(update: Update, context: CallbackContext, questions_with_answers, redis_db) -> None:
     user_id = update.message.from_user["id"]
+    answer = None
     if update.message.text == 'Новый вопрос':
+        random_question = random.choice(list(questions_with_answers.keys()))
         update.message.reply_text(random_question)
         redis_db.set(user_id, random_question)
+        answer = questions_with_answers[random_question]
+        print(answer)
+    else:
+        answer = questions_with_answers.get(redis_db.get(user_id))
+        short_answer = answer.split('.')[0].split('(')[0].lower()
+        users_text = update.message.text
+        formated_user_text = users_text.lower().split('.')[0].split('(')[0]
+        if formated_user_text == short_answer:
+            update.message.reply_text(text='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
+        else:
+            update.message.reply_text(text='Неправильно… Попробуешь ещё раз?')
 
 
 if __name__ == '__main__':
@@ -50,7 +62,7 @@ if __name__ == '__main__':
     )
     redis_db = redis.Redis(connection_pool=redis_pool)
 
-    send_question = partial(new_question, questions_with_answers=questions_with_answers, redis_db=redis_db)
+    send_question = partial(reply_to_user, questions_with_answers=questions_with_answers, redis_db=redis_db)
 
     updater = Updater(tg_quiz_token)
 
