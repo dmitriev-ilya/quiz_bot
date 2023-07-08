@@ -52,10 +52,10 @@ def handle_solution_attempt(update: Update, context: CallbackContext, questions_
     user_id = update.message.from_user["id"]
 
     answer = questions_with_answers.get(redis_db.get(user_id))
-    short_answer = answer.split('.')[0].split('(')[0].lower()
+    short_answer = answer.split('.')[0].split(' (')[0].lower()
 
     users_text = update.message.text
-    formated_user_text = users_text.lower().split('.')[0].split('(')[0]
+    formated_user_text = users_text.lower().split('.')[0].split(' (')[0]
 
     if formated_user_text == short_answer:
         update.message.reply_text(text='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
@@ -70,7 +70,15 @@ def handle_solution(update: Update, context: CallbackContext, questions_with_ans
     answer = questions_with_answers.get(redis_db.get(user_id))
     update.message.reply_text(answer)
 
-    return QUESTION
+    update.message.reply_text('Лови следующий вопрос:')
+
+    random_question = random.choice(list(questions_with_answers.keys()))
+    update.message.reply_text(random_question)
+    redis_db.set(user_id, random_question)
+    answer = questions_with_answers[random_question]
+    print(answer)
+
+    return ANSWER
 
 
 def cancel(update: Update, context: CallbackContext):
