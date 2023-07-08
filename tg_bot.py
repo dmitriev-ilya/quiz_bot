@@ -5,8 +5,8 @@ import random
 
 from dotenv import load_dotenv
 import redis
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, ConversationHandler, RegexHandler
 
 from question_extractor import extract_question_with_answer
 
@@ -17,35 +17,67 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+QUESTION, ANSWER = range(2)
+
 
 def start(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
-    custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счёт']]
+
+    custom_keyboard = [
+        ['Новый вопрос', 'Сдаться'],
+        ['Мой счёт']
+    ]
+
     reply_markup = ReplyKeyboardMarkup(custom_keyboard)
     update.message.reply_markdown_v2(
         fr'Здравствуй, {user.mention_markdown_v2()}\!',
         reply_markup=reply_markup
     )
+    return QUESTION
 
 
-def reply_to_user(update: Update, context: CallbackContext, questions_with_answers, redis_db) -> None:
+def handle_new_question_request(update: Update, context: CallbackContext, questions_with_answers, redis_db):
     user_id = update.message.from_user["id"]
-    answer = None
-    if update.message.text == 'Новый вопрос':
-        random_question = random.choice(list(questions_with_answers.keys()))
-        update.message.reply_text(random_question)
-        redis_db.set(user_id, random_question)
-        answer = questions_with_answers[random_question]
-        print(answer)
+
+    random_question = random.choice(list(questions_with_answers.keys()))
+    update.message.reply_text(random_question)
+    redis_db.set(user_id, random_question)
+    answer = questions_with_answers[random_question]
+    print(answer)
+
+    return ANSWER
+
+
+def handle_solution_attempt(update: Update, context: CallbackContext, questions_with_answers, redis_db):
+    user_id = update.message.from_user["id"]
+
+    answer = questions_with_answers.get(redis_db.get(user_id))
+    short_answer = answer.split('.')[0].split('(')[0].lower()
+
+    users_text = update.message.text
+    formated_user_text = users_text.lower().split('.')[0].split('(')[0]
+
+    if formated_user_text == short_answer:
+        update.message.reply_text(text='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
+        return QUESTION
     else:
-        answer = questions_with_answers.get(redis_db.get(user_id))
-        short_answer = answer.split('.')[0].split('(')[0].lower()
-        users_text = update.message.text
-        formated_user_text = users_text.lower().split('.')[0].split('(')[0]
-        if formated_user_text == short_answer:
-            update.message.reply_text(text='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
-        else:
-            update.message.reply_text(text='Неправильно… Попробуешь ещё раз?')
+        update.message.reply_text(text='Неправильно… Попробуешь ещё раз?')
+        return ANSWER
+
+
+def handle_solution(update: Update, context: CallbackContext, questions_with_answers, redis_db):
+    user_id = update.message.from_user["id"]
+    answer = questions_with_answers.get(redis_db.get(user_id))
+    update.message.reply_text(answer)
+
+    return QUESTION
+
+
+def cancel(update: Update, context: CallbackContext):
+    update.message.reply_text(
+        'Пока! Надеюсь скоро увидимся!',
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 
 if __name__ == '__main__':
@@ -62,15 +94,43 @@ if __name__ == '__main__':
     )
     redis_db = redis.Redis(connection_pool=redis_pool)
 
-    send_question = partial(reply_to_user, questions_with_answers=questions_with_answers, redis_db=redis_db)
+    send_question = partial(
+        handle_new_question_request,
+        questions_with_answers=questions_with_answers,
+        redis_db=redis_db
+    )
+    check_answer = partial(
+        handle_solution_attempt,
+        questions_with_answers=questions_with_answers,
+        redis_db=redis_db
+    )
+    send_answer = partial(
+        handle_solution,
+        questions_with_answers=questions_with_answers,
+        redis_db=redis_db
+    )
 
     updater = Updater(tg_quiz_token)
 
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler("start", start))
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("start", start)],
 
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, send_question))
+        states={
+            QUESTION: [
+                MessageHandler(Filters.regex('Новый вопрос'), send_question)
+            ],
+            ANSWER: [
+                MessageHandler(Filters.regex('Сдаться'), send_answer),
+                MessageHandler(Filters.text & ~Filters.command, check_answer)
+            ]
+        },
+
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+
+    dispatcher.add_handler(conv_handler)
 
     updater.start_polling()
     updater.idle()
