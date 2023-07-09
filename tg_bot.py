@@ -8,13 +8,9 @@ import redis
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, ConversationHandler
 
+from logger import SupportBotLogsHandler
 from question_extractor import extract_question_with_answer
 
-
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +40,7 @@ def handle_new_question_request(update: Update, context: CallbackContext, questi
     update.message.reply_text(random_question)
     redis_db.set(user_id, random_question)
     answer = questions_with_answers[random_question]
-    print(answer)
+    print(answer) # отладка
 
     return ANSWER
 
@@ -93,6 +89,10 @@ if __name__ == '__main__':
     load_dotenv()
     tg_quiz_token = os.getenv('TG_QUIZ_BOT_TOKEN')
     questions_with_answers = extract_question_with_answer('quiz-questions')
+    telegram_chat_id = os.getenv('TELEGRAM_USER_ID')
+
+    logging.basicConfig(level=logging.INFO)
+    logger.addHandler(SupportBotLogsHandler(tg_quiz_token, telegram_chat_id))
 
     redis_pool = redis.ConnectionPool(
         host=os.getenv('REDIS_DB_HOST'),
