@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 QUESTION, ANSWER = range(2)
 
 
-def start(update: Update, context: CallbackContext) -> None:
+def start(update: Update, context: CallbackContext):
     user = update.effective_user
 
     custom_keyboard = [
@@ -39,8 +39,6 @@ def handle_new_question_request(update: Update, context: CallbackContext, questi
     random_question = random.choice(list(questions_with_answers.keys()))
     update.message.reply_text(random_question)
     redis_db.set(user_id, random_question)
-    answer = questions_with_answers[random_question]
-    print(answer) # отладка
 
     return ANSWER
 
@@ -72,8 +70,6 @@ def handle_solution(update: Update, context: CallbackContext, questions_with_ans
     random_question = random.choice(list(questions_with_answers.keys()))
     update.message.reply_text(random_question)
     redis_db.set(user_id, random_question)
-    answer = questions_with_answers[random_question]
-    print(answer)
 
     return ANSWER
 
