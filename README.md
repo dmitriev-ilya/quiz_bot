@@ -18,6 +18,7 @@ REDIS_DB_PORT=<порт (указан после двоеточия в Public en
 REDIS_DB_USERNAME=<REDIS DATABASE USERNAME>
 REDIS_DB_PASSWORD=<REDIS DATABASE PASSWORD>
 VK_GROUP_TOKEN=<VK_GROUP_API_TOKEN>
+QUIZ_DIR_PATH=<путь до файлов с вопросами и ответами, образец файлов лежит в директории quiz-questions/ репозитория>
 ```
 
 Для получения `REDIS_DB_HOST`, `REDIS_DB_PORT`, `REDIS_DB_USERNAME`, `REDIS_DB_PASSWORD` необходимо создать базу на [Redis](https://redis.com/). Все нужные параметры находятся на вкладке конфигурации БД:
