@@ -62,8 +62,9 @@ if __name__ == "__main__":
     vk_token = os.getenv('VK_GROUP_TOKEN')
     telegram_bot_token = os.getenv('TG_QUIZ_BOT_TOKEN')
     telegram_chat_id = os.getenv('TELEGRAM_USER_ID')
+    quiz_dir_path = os.getenv('QUIZ_DIR_PATH')
 
-    questions_with_answers = extract_question_with_answer('quiz-questions')
+    questions_with_answers = extract_question_with_answer(quiz_dir_path)
 
     redis_pool = redis.ConnectionPool(
         host=os.getenv('REDIS_DB_HOST'),

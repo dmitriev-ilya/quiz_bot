@@ -84,8 +84,10 @@ def cancel(update: Update, context: CallbackContext):
 if __name__ == '__main__':
     load_dotenv()
     tg_quiz_token = os.getenv('TG_QUIZ_BOT_TOKEN')
-    questions_with_answers = extract_question_with_answer('quiz-questions')
+    quiz_dir_path = os.getenv('QUIZ_DIR_PATH')
     telegram_chat_id = os.getenv('TELEGRAM_USER_ID')
+
+    questions_with_answers = extract_question_with_answer(quiz_dir_path)
 
     logging.basicConfig(level=logging.INFO)
     logger.addHandler(SupportBotLogsHandler(tg_quiz_token, telegram_chat_id))
