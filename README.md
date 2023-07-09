@@ -1,5 +1,13 @@
-# quiz_bot
+# Бот "Викторина"
+Игра "Викторина" включает в себя ботов для игры в Telegram и VK. Боты присылают пользователю вопросы и следят за правильностью ответов.
 
+Пример рабочего Telegram-бота: [@DvmnStudyQuizPleaseBot](https://t.me/DvmnStudyQuizPleaseBot)
+
+![image](https://dvmn.org/filer/canonical/1569215494/324/)
+
+Пример рабочего VK-бота: https://vk.com/public221508982
+
+![image](https://dvmn.org/filer/canonical/1569215498/325/)
 
 ## Установка
 
